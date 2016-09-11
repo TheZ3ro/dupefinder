@@ -1,8 +1,12 @@
 # dupefinder
 
-Detect duplicate files across different machines, using SHA256
+Detect and Delete duplicate files across different machines/HDD/foders, using SHA256
 
 Introductory blog post: https://rocketeer.be/blog/2015/05/dupefinder/
+
+# uniqfinder
+
+Delete every duplicate leaving only 1 of each unique file in folder, using SHA256
 
 # Installation
 ```
