@@ -33,10 +33,10 @@ type DeletePair struct {
 }
 
 // Generate a catalog file based on a set of folders
-func Generate(folders ...string) (DupeCatalog, error) {
+func Generate(folders ...string) (int, DupeCatalog, error) {
 	err := validateFolders(folders...)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 
 	errs := make(chan error)
@@ -46,6 +46,7 @@ func Generate(folders ...string) (DupeCatalog, error) {
 
 	go walkAllFolders(errs, filenames, folders...)
 	go hashFiles(errs, filenames, entries)
+	count := 0
 
 	for {
 		entry, ok := <-entries
@@ -53,18 +54,19 @@ func Generate(folders ...string) (DupeCatalog, error) {
 			break
 		}
 
+		count++
 		result[entry.Hash] = entry.Filename
 	}
 
 	select {
 	case err := <-errs:
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 	default:
 	}
 
-	return result, nil
+	return count, result, nil
 }
 
 // Detect duplicates. Set echo to true to print duplicates, rm to delete them.

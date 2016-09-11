@@ -63,7 +63,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		catalog, err := dupefinder.Generate(args[1:]...)
+		_, catalog, err := dupefinder.Generate(args[1:]...)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
