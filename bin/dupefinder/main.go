@@ -58,6 +58,7 @@ func main() {
 	if generate {
 
 		if len(args) < 2 {
+			fmt.Println("Too few argument, got",len(args)," expected 1")
 			fmt.Println(generateHelp)
 			os.Exit(1)
 		}
@@ -89,8 +90,24 @@ func main() {
 		}
 
 		if len(args) < 2 {
+			fmt.Println("Too few argument, got",len(args)," expected 1")
 			fmt.Println(detectHelp)
 			os.Exit(1)
+		}
+
+		if rm {
+			var choice string = "n"
+			fmt.Println("Are you sure to delete all the duplicates? [y/n] \nRun with -dryrun to see what file will be deleted")
+			if _, err := fmt.Scan(&choice); err != nil {
+				fmt.Println("  Scan for choice failed, due to", err)
+				os.Exit(1)
+			}
+			if choice == "y" {
+				fmt.Println("  Ok")
+			} else {
+				rm = false
+				dryrun = true
+			}
 		}
 
 		catalogEntries, err := dupefinder.ParseCatalog(args[0])
