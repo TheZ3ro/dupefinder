@@ -1,14 +1,12 @@
 # dupefinder
 
-[![Build Status](https://travis-ci.org/rubenv/dupefinder.svg?branch=master)](https://travis-ci.org/rubenv/dupefinder) [![GoDoc](https://godoc.org/github.com/rubenv/dupefinder?status.png)](https://godoc.org/github.com/rubenv/dupefinder)
-
 Detect duplicate files across different machines, using SHA256
 
 Introductory blog post: https://rocketeer.be/blog/2015/05/dupefinder/
 
 # Installation
 ```
-go get github.com/rubenv/dupefinder/...
+go get github.com/thez3ro/dupefinder/...
 ```
 
 # Usage
@@ -31,7 +29,7 @@ Usage: dupefinder -detect [-dryrun / -rm] filename folder...
 Import into your application with:
 
 ```go
-import "github.com/rubenv/dupefinder"
+import "github.com/thez3ro/dupefinder"
 ```
 
 ## Usage
@@ -77,6 +75,7 @@ Parse a catalog file using an io.Reader
     (The MIT License)
 
     Copyright (C) 2015 by Ruben Vermeersch <ruben@rocketeer.be>
+    Copyright (C) 2016 by TheZero <io@thezero.org>
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal

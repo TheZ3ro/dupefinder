@@ -20,20 +20,109 @@ type fileHash struct {
 
 const header = `# This is a dupefinder catalog
 #
-# See https://github.com/rubenv/dupefinder for more info
+# See https://github.com/TheZ3ro/dupefinder for more info
 
 `
 
 // Catalog of hash to filename mappings
 type DupeCatalog map[string]string
 
+type DeletePair struct {
+	Origin   string
+	Filename string
+}
+
 // Generate a catalog file based on a set of folders
-func Generate(catalog string, folders ...string) error {
+func Generate(folders ...string) (DupeCatalog, error) {
 	err := validateFolders(folders...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	errs := make(chan error)
+	filenames := make(chan string, 100)
+	entries := make(chan fileHash, 100)
+	result := DupeCatalog{}
+
+	go walkAllFolders(errs, filenames, folders...)
+	go hashFiles(errs, filenames, entries)
+
+	for {
+		entry, ok := <-entries
+		if !ok {
+			break
+		}
+
+		result[entry.Hash] = entry.Filename
+	}
+
+	select {
+	case err := <-errs:
+		if err != nil {
+			return nil, err
+		}
+	default:
+	}
+
+	return result, nil
+}
+
+// Detect duplicates. Set echo to true to print duplicates, rm to delete them.
+func Detect(catalog DupeCatalog, uniq bool, folders ...string) (int64, []DeletePair, error) {
+	err := validateFolders(folders...)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	errs := make(chan error)
+	filenames := make(chan string, 100)
+	entries := make(chan fileHash, 100)
+
+	go walkAllFolders(errs, filenames, folders...)
+	go hashFiles(errs, filenames, entries)
+
+	delete := []DeletePair(nil)
+	deleted := int64(0)
+	for {
+		entry, ok := <-entries
+		if !ok {
+			break
+		}
+
+		if orig, ok := catalog[entry.Hash]; ok {
+			fi, err := os.Stat(entry.Filename)
+			if err != nil {
+				return 0, nil, err
+			}
+
+			del := true
+			if uniq {
+				if entry.Filename == orig {
+					del = false
+				}
+			}
+
+			if del {
+				deleted += fi.Size()
+				delPair := DeletePair{orig, entry.Filename}
+				delete = append(delete, delPair)
+			}
+		}
+	}
+
+	select {
+	case err := <-errs:
+		if err != nil {
+			return 0, nil, err
+		}
+	default:
+	}
+
+	return deleted, delete, nil
+}
+
+// Write catalog map on file
+func WriteCatalog(catalog string, dupec DupeCatalog) error {
 	out, err := os.Create(catalog)
 	if err != nil {
 		return err
@@ -45,94 +134,12 @@ func Generate(catalog string, folders ...string) error {
 		return err
 	}
 
-	errs := make(chan error)
-	filenames := make(chan string, 100)
-	entries := make(chan fileHash, 100)
-
-	go walkAllFolders(errs, filenames, folders...)
-	go hashFiles(errs, filenames, entries)
-
-	for {
-		entry, ok := <-entries
-		if !ok {
-			break
-		}
-
-		_, err := out.WriteString(fmt.Sprintf("%s %s\n", entry.Hash, entry.Filename))
+	for hash, filename := range dupec {
+		_, err := out.WriteString(fmt.Sprintf("%s %s\n", hash, filename))
 		if err != nil {
 			return err
 		}
 	}
-
-	select {
-	case err := <-errs:
-		if err != nil {
-			return err
-		}
-	default:
-	}
-
-	return nil
-}
-
-// Detect duplicates. Set echo to true to print duplicates, rm to delete them.
-func Detect(catalog string, echo, rm bool, folders ...string) error {
-	err := validateFolders(folders...)
-	if err != nil {
-		return err
-	}
-
-	catalogEntries, err := ParseCatalog(catalog)
-	if err != nil {
-		return err
-	}
-
-	errs := make(chan error)
-	filenames := make(chan string, 100)
-	entries := make(chan fileHash, 100)
-
-	go walkAllFolders(errs, filenames, folders...)
-	go hashFiles(errs, filenames, entries)
-
-	deleted := int64(0)
-	for {
-		entry, ok := <-entries
-		if !ok {
-			break
-		}
-
-		if orig, ok := catalogEntries[entry.Hash]; ok {
-			fi, err := os.Stat(entry.Filename)
-			if err != nil {
-				return err
-			}
-
-			deleted += fi.Size()
-
-			if echo {
-				fmt.Printf("Would delete %s (matches %s)\n", entry.Filename, orig)
-			}
-
-			if rm {
-				fmt.Printf("Deleting %s (matches %s)\n", entry.Filename, orig)
-				err := os.Remove(entry.Filename)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	fmt.Printf("Size saved: %d bytes\n", deleted)
-
-	select {
-	case err := <-errs:
-		if err != nil {
-			return err
-		}
-	default:
-	}
-
 	return nil
 }
 

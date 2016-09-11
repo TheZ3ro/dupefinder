@@ -1,0 +1,9 @@
+# This is a dupefinder catalog
+#
+# See https://github.com/rubenv/dupefinder for more info
+
+00e3261a6e0d79c329445acd540fb2b07187a0dcf6017065c8814010283ac67f a/c/bla.txt
+5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03 a/hello.txt
+5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03 b/hello.txt
+5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03 hello.txt
+886be3c413509f15ce1c9f080ed0396cef380df2b264cc50b4b09903b9e586da dupef.txt

@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/rubenv/dupefinder"
+	"github.com/TheZ3ro/dupefinder"
 )
 
 const (
@@ -62,11 +62,19 @@ func main() {
 			os.Exit(1)
 		}
 
-		err := dupefinder.Generate(args[0], args[1:]...)
+		catalog, err := dupefinder.Generate(args[1:]...)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		err = dupefinder.WriteCatalog(args[0], catalog)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Catalog file saved successfully to",args[0]," !")
 	}
 
 	if detect {
@@ -85,10 +93,34 @@ func main() {
 			os.Exit(1)
 		}
 
-		err := dupefinder.Detect(args[0], dryrun, rm, args[1:]...)
+		catalogEntries, err := dupefinder.ParseCatalog(args[0])
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		delSize, deleteEntries, err := dupefinder.Detect(catalogEntries, false, args[1:]...)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		for index := range deleteEntries {
+			entry := deleteEntries[index]
+			if dryrun {
+				fmt.Printf("Would delete %s (matches %s)\n", entry.Filename, entry.Origin)
+			}
+
+			if rm {
+				fmt.Printf("Deleting %s (matches %s)\n", entry.Filename, entry.Origin)
+				err := os.Remove(entry.Filename)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+			}
+		}
+
+		fmt.Printf("Total size saved: %d bytes\n", delSize)
 	}
 }
